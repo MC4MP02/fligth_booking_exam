@@ -1,7 +1,7 @@
 <script>
 import RangeFilter from './components/RangeFilter.vue'
 export default {
-  components: {RangeFilter},
+  components: { RangeFilter },
   data: function () {
     return {
       flights: [],
