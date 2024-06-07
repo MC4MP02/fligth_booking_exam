@@ -50,46 +50,103 @@ const Vueling = {
 };
 
 // TODO
+
 const flightsServer = {
-  proveidors: [AirEuropa, Delta, Ryanair, Vueling],
-  actualInterval: null,
   getFilteredFlights: function (min, max) {
-    let allFlights = [];
-    let finalFlights = [];
     return new Promise((resolve, reject) => {
-      let promises = this.proveidors.map((el) => {
-        return new Promise((resolve, reject) => {
-          let timeout = setTimeout(() => {
-            reject("timeout");
-          }, 500);
+      let flightsReturned = [];
+      let finishedAirEuropa = false;
+      let finishedDelta = false;
+      let finishedRyanair = false;
+      let finishedVueling = false;
 
-          el.getFlights()
-            .then((flights) => {
-              clearTimeout(timeout);
-              resolve(flights);
-            })
-            .catch(() => {
-              clearTimeout(timeout);
-              reject();
-            });
-        })
-          .then((flights) => {
-            allFlights = allFlights.concat(flights);
-          })
-          .catch((err) => {
-            console.log(err);
+      setTimeout(() => {
+        resolve(flightsReturned);
+      }, 500);
+
+      AirEuropa.getFlights()
+        .then((res) => {
+          res.forEach((el) => {
+            if (el.price >= min && el.price <= max) {
+              flightsReturned.push(el);
+              finishedAirEuropa = true;
+            }
           });
-      });
-
-      Promise.all(promises).then(() => {
-        allFlights.forEach((el) => {
-          if (el.price >= min && el.price <= max) {
-            finalFlights.push(el);
+        })
+        .catch(console.log)
+        .finally(() => {
+          if (
+            finishedAirEuropa &&
+            finishedDelta &&
+            finishedRyanair &&
+            finishedVueling
+          ) {
+            resolve(flightsReturned);
           }
         });
 
-        resolve(finalFlights);
-      });
+      Delta.getFlights()
+        .then((res) => {
+          res.forEach((el) => {
+            if (el.price >= min && el.price <= max) {
+              flightsReturned.push(el);
+              finishedDelta = true;
+            }
+          });
+        })
+        .catch(console.log)
+        .finally(() => {
+          if (
+            finishedAirEuropa &&
+            finishedDelta &&
+            finishedRyanair &&
+            finishedVueling
+          ) {
+            resolve(flightsReturned);
+          }
+        });
+
+      Ryanair.getFlights()
+        .then((res) => {
+          res.forEach((el) => {
+            if (el.price >= min && el.price <= max) {
+              flightsReturned.push(el);
+              finishedRyanair = true;
+            }
+          });
+        })
+        .catch(console.log)
+        .finally(() => {
+          if (
+            finishedAirEuropa &&
+            finishedDelta &&
+            finishedRyanair &&
+            finishedVueling
+          ) {
+            resolve(flightsReturned);
+          }
+        });
+
+      Vueling.getFlights()
+        .then((res) => {
+          res.forEach((el) => {
+            if (el.price >= min && el.price <= max) {
+              flightsReturned.push(el);
+              finishedVueling = true;
+            }
+          });
+        })
+        .catch(console.log)
+        .finally(() => {
+          if (
+            finishedAirEuropa &&
+            finishedDelta &&
+            finishedRyanair &&
+            finishedVueling
+          ) {
+            resolve(flightsReturned);
+          }
+        });
     });
   },
 };
@@ -108,7 +165,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/flights/:min?/:max?", (req, res) => {
-  //if (typeof flightsServer != "undefined") {
+  /* if (typeof flightsServer != "undefined") { */
   flightsServer
     .getFilteredFlights(req.params.min, req.params.max)
     .then((data) => res.json(data))

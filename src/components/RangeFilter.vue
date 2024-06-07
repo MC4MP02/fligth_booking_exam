@@ -1,91 +1,115 @@
 <script>
-/*
-Note: use this syntax to watch a nested field
-
-   watch: {
-    'object.field': function() { ...  },
-*/
 export default {
   props: ['modelValue', 'thresholds'],
   emits: ['update:modelValue'],
   data() {
     return {
-      forms: {},
-      formColor: 'black'
+      data: {},
+      minMax: {
+        min: this.modelValue.min,
+        max: this.modelValue.max
+      }
     }
   },
   created() {
-    this.initForms()
-  },
-  methods: {
-    handleClick(value) {
-      let min = this.modelValue.min
-      let max = this.modelValue.max
-
-      if (this.forms[value].form == '●') {
-        this.forms[value].color == 'black' ? this.forms[value].color = 'green' : this.forms[value].color = 'black'
-      } else {
-        if (this.forms[min].color == 'green' && this.forms[value] != '●') {
-          if (value > max) {
-            this.$emit('update:modelValue', { min: max, max: value })
-          } else {
-
-            this.$emit('update:modelValue', { min: value, max: max })
-          }
-        } else if (this.forms[max].color == 'green' && this.forms[value] != '●') {
-          if (value < min) {
-            this.$emit('update:modelValue', { min: value, max: min })
-          } else {
-            this.$emit('update:modelValue', { min: min, max: value })
-          }
-        }
-      }
-
-      if (value == min) {
-        this.forms[max].color = 'black'
-      } else if (value == max) {
-        this.forms[min].color = 'black'
-      }
-    },
-    initForms() {
-      this.thresholds.forEach((el) => {
-        if (el == this.modelValue.min || el == this.modelValue.max) {
-          this.forms[el] = {
-            form: '●',
-            color: 'black'
-          }
-        } else if (el > this.modelValue.min && el < this.modelValue.max) {
-          this.forms[el] = {
-            form: '—',
-            color: 'black'
-          }
-        } else {
-          this.forms[el] = {
-            form: '',
-            color: 'black'
-          }
-        }
-      })
-    }
+    this.init()
   },
   watch: {
-    modelValue() {
-      this.initForms()
+    modelValue: {
+      handler: function (val) {
+        this.minMax = val
+        this.init()
+      },
+      deep: true
+    },
+    /*
+      'modelValue.min'(min) {
+        this.minMax.min = min
+        this.init()
+      },
+      'modelValue.max'(max) {
+        this.minMax.max = max
+        this.init()
+      }
+    */
+  },
+  methods: {
+    init() {
+      this.thresholds.forEach((el) => {
+        let objForm = ''
+        let objColor = 'black'
+
+        if (el == this.minMax.min || el == this.minMax.max) {
+          objForm = '●'
+        } else if (el > this.minMax.min && el < this.minMax.max) {
+          objForm = '—'
+        }
+        this.data[el] = {
+          form: objForm,
+          color: objColor
+        }
+      })
+    },
+    handleClick(el) {
+      if (this.data[el].form == '●') {
+        this.data[el].color == 'black' ? this.data[el].color = 'green' : this.data[el].color = 'black'
+
+        if (el == this.minMax.min) {
+          if (this.data[this.minMax.max].color == 'green') {
+            this.data[this.minMax.max].color = 'black'
+          }
+        }
+        if (el == this.minMax.max) {
+          if (this.data[this.minMax.min].color == 'green') {
+            this.data[this.minMax.min].color = 'black'
+          }
+        }
+
+      } else {
+        let min = this.minMax.min
+        let max = this.minMax.max
+
+        if (this.data[this.minMax.min].color == 'green') {
+          this.data[this.minMax.min].color == 'black'
+          if (el > this.minMax.max) {
+            this.minMax = {
+              min: max,
+              max: el
+            }
+          } else {
+            this.minMax = {
+              min: el,
+              max: max
+            }
+          }
+        } else if (this.data[this.minMax.max].color == 'green') {
+          this.data[this.minMax.max].color == 'black'
+          if (el < this.minMax.min) {
+            this.minMax = {
+              min: el,
+              max: min
+            }
+          } else {
+            this.minMax = {
+              min: min,
+              max: el
+            }
+          }
+        }
+        this.$emit('update:modelValue', this.minMax)
+        this.init()
+      }
     }
   }
-
 }
 </script>
 
 <template>
   <div class="range">
-    <div v-for="value, index in thresholds">
-      <div class="range-item" @click="handleClick(value)" :style="`color: ${forms[value].color}`">
-        {{ forms[value].form }}
+    <div v-for="(el) in thresholds">
+      <div class="range-item" @click="handleClick(el)" :style="`color: ${this.data[el].color}`">{{ data[el].form }}
       </div>
-      <span class="range-threshold">
-        {{ value }}
-      </span>
+      <span class="range-threshold">{{ el }}</span>
     </div>
   </div>
 </template>
